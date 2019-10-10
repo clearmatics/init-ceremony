@@ -1,4 +1,4 @@
-# eth-keys-generator
+# Autonity initial ceremony
 Autonity initial ceremony
 
 ## External Dependencies
