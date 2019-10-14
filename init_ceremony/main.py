@@ -183,6 +183,7 @@ def main():
 
     if args.kubeconf_type != 'non_k8s':
         write_genesis(genesis, namespace, args.cm_genesis)
+        logging.info('Generated genesis was written successfully to ConfigMap ' + str(args.cm_genesis))
 
 
 if __name__ == '__main__':
