@@ -15,7 +15,7 @@ def get_genesis_template(path_genesis_template):
     return genesis
 
 
-def parse_peer_list(genesis: object) -> object:
+def parse_peer_list(genesis):
     users = genesis['config']['autonityContract']['users']
     fqdn_peers = {}
     for user in users:
@@ -85,6 +85,21 @@ def resolving(fqdn_peers, nameservers):
     return resolved_peers
 
 
+def patch_genesis(genesis, resolved_peers):
+    genesis = genesis
+    for i, user in enumerate(genesis['config']['autonityContract']['users']):
+        if 'enode' in user:
+            if user['enode'][:7] == 'fqdn://':
+                fqdn=user['enode'][7:]
+                enode_string = 'enode://{pub_key}@{ip}:{port}'.format(
+                    pub_key=resolved_peers[fqdn]['pub_key'],
+                    ip=resolved_peers[fqdn]['ip'],
+                    port=resolved_peers[fqdn]['port'],
+                )
+                genesis['config']['autonityContract']['users'][i]['enode'] = enode_string
+    return genesis
+
+
 def main():
     logging.basicConfig(
         format='%(asctime)s %(levelname)-8s %(message)s',
@@ -141,8 +156,8 @@ def main():
     else:
         logging.info('Starting without kubernetes connection')
 
-    genesis = get_genesis_template(args.path_genesis_template)
-    fqdn_peers = parse_peer_list(genesis)
+    genesis_template = get_genesis_template(args.path_genesis_template)
+    fqdn_peers = parse_peer_list(genesis_template)
     logging.info('Trying to resolv peers: ' + str([*fqdn_peers]))
 
     logging.info('Use Name Servers to resolve records: ' + str(nameservers))
@@ -155,7 +170,9 @@ def main():
     else:
         logging.info('All fqdn records was resolved successfully')
 
-    print(resolved_peers)
+    genesis = patch_genesis(genesis_template, resolved_peers)
+    time.sleep(0.5)
+    print(str(json.dumps(genesis, indent=2)))
 
 
 if __name__ == '__main__':
