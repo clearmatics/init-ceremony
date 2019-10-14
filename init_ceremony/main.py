@@ -182,7 +182,7 @@ def main():
     print(str(json.dumps(genesis, indent=2)))
 
     if args.kubeconf_type != 'non_k8s':
-        write_genesis(genesis, namespace, cm_genesis)
+        write_genesis(genesis, namespace, args.cm_genesis)
 
 
 if __name__ == '__main__':
