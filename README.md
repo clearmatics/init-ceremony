@@ -21,3 +21,10 @@ optional arguments:
   --dns DNS_RESOLVERS                      List of DNS resolvers (default: 1.1.1.1,8.8.8.8)
   --namespace NAMESPACE                    Kubernetes namespace.
 ```
+
+## Example of dns records for one validator node
+
+    | type | name | value | TTL |
+    |------|-------------------|-------------|---|
+    | A    | validator1.example.com      | 203.0.113.1 | 1 min |
+    | TXT  | validator1.example.com  |p=30303\; k=ad840ab412c026b098291f5ab56f923214469c61d4a8be41334c9a00e2dc84a8ff9a5035b3683184ea79902436454a7a00e966de45ff46dbd118e426edd4b2d0| 1 min |

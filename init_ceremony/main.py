@@ -52,11 +52,9 @@ def parse_txt_rec(record):
     return port, pub_key
 
 
-def resolving(fqdn_peers):
+def resolving(fqdn_peers, nameservers):
     resolver = dns.resolver.Resolver(configure=False)
-    resolver.nameservers = ['8.8.8.8', '1.1.1.1']
-
-    # Here will loop
+    resolver.nameservers = nameservers
 
     resolved_peers = {}
     for peer in fqdn_peers:
@@ -68,7 +66,7 @@ def resolving(fqdn_peers):
             else:
                 logging.error('for ' + peer + ' must be only one A record')
         except Exception as e:
-            logging.warning(e)
+            logging.warning('A record: ' + str(e))
 
         try:
             answer = resolver.query(peer, 'TXT')
@@ -79,8 +77,9 @@ def resolving(fqdn_peers):
                         resolved_peer['port'] = rec[0]
                         resolved_peer['pub_key'] = rec[1]
         except Exception as e:
-            logging.warning(e)
-        logging.debug('fqdn://' + peer + ' resolved to ' + str(resolved_peer))
+            logging.warning('TXT record: ' + str(e))
+        if len(resolved_peer) > 0:
+            logging.info('fqdn://' + peer + ' resolved to ' + str(resolved_peer))
         if len(resolved_peer) == 3:
             resolved_peers[peer] = resolved_peer
     return resolved_peers
@@ -124,8 +123,8 @@ def main():
                         help='Kubernetes namespace.'
                         )
     args = parser.parse_args()
-    resolvers = args.dns_resolvers.split(',')
-    for ip in resolvers:
+    nameservers = args.dns_resolvers.split(',')
+    for ip in nameservers:
         if not validators.ip_address.ipv4(ip):
             logging.error('ERROR: Wrong value for argument --dns '
                           + ip + '. Should be a list of IPv4 separated by comma')
@@ -146,15 +145,17 @@ def main():
     fqdn_peers = parse_peer_list(genesis)
     logging.info('Trying to resolv peers: ' + str([*fqdn_peers]))
 
+    logging.info('Use Name Servers to resolve records: ' + str(nameservers))
     resolved_peers = {}
     while len(resolved_peers) != len(fqdn_peers):
-        resolved_peers = resolving(fqdn_peers)
-        logging.info('Resolved ' + str(len(resolved_peers)) + ' fqdn records from ' + str(len(fqdn_peers)))
-        time.sleep(10)
+        resolved_peers = resolving(fqdn_peers, nameservers)
+        logging.info('Fully resolved ' + str(len(resolved_peers)) + ' fqdn records from ' + str(len(fqdn_peers)))
+        if len(resolved_peers) != len(fqdn_peers):
+            time.sleep(10)
     else:
         logging.info('All fqdn records was resolved successfully')
-        print('WIN!')
-    #print(resolved_peers)
+
+    print(resolved_peers)
 
 
 if __name__ == '__main__':
