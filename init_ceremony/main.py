@@ -5,6 +5,7 @@ import argparse
 import logging
 import validators
 import dns.resolver
+import time
 from kubernetes import client, config
 
 
@@ -28,6 +29,29 @@ def parse_peer_list(genesis: object) -> object:
     return fqdn_peers
 
 
+def parse_txt_rec(record):
+    # Looking for string like:
+    # "p=30303; k=ad840ab412c026b098291f5ab56f923214469c61d4a8be41334c9a00e2dc84a8ff9a5035b3683184ea79902436454a7a00e966de45ff46dbd118e426edd4b2d0"
+    # is else: return False
+    port = 0
+    pub_key = ''
+    if record.split("; ").__len__() < 2:
+        return False
+    for key in record.split("; "):
+        if key.split("=")[0] == 'p':
+            if key.split("=")[1].isdigit() and key.split("=")[1].__len__() <= 5:
+                int(key.split("=")[1])
+                if int(key.split("=")[1]) < 65535:
+                    port = int(key.split("=")[1])
+        elif key.split("=")[0] == 'k':
+            pub_key = key.split("=")[1]
+    if port == 0\
+            or pub_key.__len__() != 128\
+            or not pub_key.isalnum():
+        return False
+    return port, pub_key
+
+
 def resolving(fqdn_peers):
     resolver = dns.resolver.Resolver(configure=False)
     resolver.nameservers = ['8.8.8.8', '1.1.1.1']
@@ -36,11 +60,11 @@ def resolving(fqdn_peers):
 
     resolved_peers = {}
     for peer in fqdn_peers:
+        resolved_peer = {}
         try:
             answer = resolver.query(peer, 'A')
             if answer.__len__() == 1:
-                logging.debug('IP for ' + peer + ': ' + answer[0].address)
-                resolved_peers = {peer: {'ip': answer[0].address}}
+                resolved_peer['ip'] = answer[0].address
             else:
                 logging.error('for ' + peer + ' must be only one A record')
         except Exception as e:
@@ -50,16 +74,22 @@ def resolving(fqdn_peers):
             answer = resolver.query(peer, 'TXT')
             for data in answer:
                 for txt_string in data.strings:
-                    logging.debug('TXT for ' + peer + ': ' + str(txt_string, 'utf-8'))
+                    rec = parse_txt_rec(str(txt_string, 'utf-8'))
+                    if rec:
+                        resolved_peer['port'] = rec[0]
+                        resolved_peer['pub_key'] = rec[1]
         except Exception as e:
             logging.warning(e)
+        logging.debug('fqdn://' + peer + ' resolved to ' + str(resolved_peer))
+        if len(resolved_peer) == 3:
+            resolved_peers[peer] = resolved_peer
     return resolved_peers
 
 
 def main():
     logging.basicConfig(
         format='%(asctime)s %(levelname)-8s %(message)s',
-        level=logging.DEBUG,
+        level=logging.INFO,
         datefmt='%Y-%m-%d %H:%M:%S')
 
     parser = argparse.ArgumentParser(description='Resolve by fqdn:// records from genesis-template.json and write '
@@ -114,8 +144,17 @@ def main():
 
     genesis = get_genesis_template(args.path_genesis_template)
     fqdn_peers = parse_peer_list(genesis)
-    print(fqdn_peers)
-    print(resolving(fqdn_peers))
+    logging.info('Trying to resolv peers: ' + str([*fqdn_peers]))
+
+    resolved_peers = {}
+    while len(resolved_peers) != len(fqdn_peers):
+        resolved_peers = resolving(fqdn_peers)
+        logging.info('Resolved ' + str(len(resolved_peers)) + ' fqdn records from ' + str(len(fqdn_peers)))
+        time.sleep(10)
+    else:
+        logging.info('All fqdn records was resolved successfully')
+        print('WIN!')
+    #print(resolved_peers)
 
 
 if __name__ == '__main__':
