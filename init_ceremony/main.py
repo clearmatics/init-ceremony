@@ -100,6 +100,13 @@ def patch_genesis(genesis, resolved_peers):
     return genesis
 
 
+def write_genesis(genesis, namespace, cm_name):
+    api_instance = client.CoreV1Api()
+    cmap = client.V1ConfigMap()
+    cmap.data = {'genesis.json': json.dumps(genesis, indent=2)}
+    api_instance.patch_namespaced_config_map(cm_name, namespace, cmap)
+
+
 def main():
     logging.basicConfig(
         format='%(asctime)s %(levelname)-8s %(message)s',
@@ -173,6 +180,9 @@ def main():
     genesis = patch_genesis(genesis_template, resolved_peers)
     time.sleep(0.5)
     print(str(json.dumps(genesis, indent=2)))
+
+    if args.kubeconf_type != 'non_k8s':
+        write_genesis(genesis, namespace, cm_genesis)
 
 
 if __name__ == '__main__':
