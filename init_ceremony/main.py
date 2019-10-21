@@ -103,7 +103,7 @@ def patch_genesis(genesis, resolved_peers):
 def write_genesis(genesis, namespace, cm_name):
     api_instance = client.CoreV1Api()
     cmap = client.V1ConfigMap()
-    cmap.data = {'genesis.json': json.dumps(genesis, indent=2)}
+    cmap.data = {'genesis': json.dumps(genesis, indent=2)}
     api_instance.patch_namespaced_config_map(cm_name, namespace, cmap)
 
 
