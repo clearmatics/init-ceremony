@@ -1,5 +1,7 @@
 FROM python:3.7.3-alpine
 
+LABEL org.opencontainers.image.source https://github.com/clearmatics/init-ceremony
+
 RUN apk add --no-cache --virtual .build-deps gcc musl-dev
 
 WORKDIR /env/init_ceremony
