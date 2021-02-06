@@ -40,7 +40,7 @@ optional arguments:
 
 ## Docker usage
 ```shell script
-docker run -v $(pwd)/genesis-template.json:/autonity/genesis-template.json -ti --rm clearmatics/init-ceremony \
+docker run -v $(pwd)/genesis-template.json:/autonity/genesis-template.json -ti --rm ghcr.io/clearmatics/init-ceremony \
   --genesis-template "/autonity/genesis-template.json" \
   --dns 1.1.1.1,8.8.8.8
 ```
