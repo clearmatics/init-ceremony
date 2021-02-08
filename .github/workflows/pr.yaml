@@ -1,0 +1,16 @@
+name: On GitHub PR, Docker Build
+
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build
+        run: |
+          docker build . --tag ghcr.io/$GITHUB_REPOSITORY:latest
