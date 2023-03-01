@@ -1,5 +1,5 @@
-# Autonity initial ceremony
-Autonity initial ceremony
+## :warning: Archived :warning:
+Autonity initial ceremony was used as part of the workflow to generate genesis files on the fly during re-genesis events. This workflow is no longer used and this repository is ready for archive.
 
 ## External Dependencies
 - kube-apiserver v1.14.6
